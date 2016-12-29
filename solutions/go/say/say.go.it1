@@ -1,0 +1,111 @@
+// Package say implements a function for spelling out integers in english.
+package say
+
+import "strconv"
+import "strings"
+
+var digits = []string{
+	"zero",
+	"one",
+	"two",
+	"three",
+	"four",
+	"five",
+	"six",
+	"seven",
+	"eight",
+	"nine",
+}
+
+var teens = []string{
+	"ten",
+	"eleven",
+	"twelve",
+	"thirteen",
+	"fourteen",
+	"fifteen",
+	"sixteen",
+	"seventeen",
+	"eighteen",
+	"nineteen",
+}
+
+var decadicNumbers = []string{
+	"twenty",
+	"thirty",
+	"forty",
+	"fifty",
+	"sixty",
+	"seventy",
+	"eighty",
+	"ninety",
+}
+
+const hundred = "hundred"
+
+var powersOfThousand = []string{
+	"",
+	"thousand",
+	"million",
+	"billion",
+	"trillion",
+	"quadrillion",
+	"quintillion",
+}
+
+// Say spells out integers in english.
+func Say(number uint64) string {
+	resultParts := []string{}
+
+	numberString := strconv.FormatUint(number, 10)
+	for i := len(numberString) - 1; i >= 0; i -= 3 {
+		switch i - 3 {
+		case -3:
+			partValue, _ := strconv.Atoi(string(numberString[i]))
+			if (len(numberString)-i)/3 != 0 && partValue != 0 {
+				resultParts = prepend(resultParts, powersOfThousand[(len(numberString)-i)/3])
+			}
+			resultParts = prepend(resultParts, digits[partValue])
+		default:
+			partValue, _ := strconv.Atoi(string(numberString[i-1 : i+1]))
+			if (len(numberString)-i)/3 != 0 && partValue != 0 {
+				if i-2 < 0 {
+					resultParts = prepend(resultParts, powersOfThousand[(len(numberString)-i)/3])
+				} else {
+					partValue, _ := strconv.Atoi(string(numberString[i-2 : i+1]))
+					if partValue != 0 {
+						resultParts = prepend(resultParts, powersOfThousand[(len(numberString)-i)/3])
+					}
+				}
+			}
+			switch {
+			case partValue < 10:
+				if partValue != 0 {
+					resultParts = prepend(resultParts, digits[int(partValue)])
+				}
+			case partValue < 20:
+				resultParts = prepend(resultParts, teens[int(partValue)%10])
+			default:
+				remainder := partValue % 10
+				factor := partValue/10 - 2
+				if remainder == 0 {
+					resultParts = prepend(resultParts, decadicNumbers[factor])
+				} else {
+					resultParts = prepend(resultParts, decadicNumbers[factor]+"-"+digits[remainder])
+				}
+			}
+			if i-2 >= 0 {
+				hundredValue, _ := strconv.Atoi(string(numberString[i-2]))
+				if hundredValue != 0 {
+					resultParts = prepend(resultParts, digits[hundredValue]+" "+hundred)
+				}
+			}
+		}
+	}
+
+	return strings.Join(resultParts, " ")
+}
+
+func prepend(slice []string, value string) []string {
+	return append([]string{value}, slice...)
+}

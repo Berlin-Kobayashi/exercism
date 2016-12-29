@@ -1,0 +1,151 @@
+// Package react implements an API for reactive programming.
+package react
+
+import "errors"
+
+const testVersion = 4
+
+type cellStore struct {
+	cell      Cell
+	value     int
+	callBacks []func()
+}
+
+// BasicReactor is a basic implementation of the Reactor interface.
+type BasicReactor struct {
+	store map[int]cellStore
+}
+
+// CreateInput creates a new InputCell.
+func (reactor BasicReactor) CreateInput(value int) InputCell {
+	cell := BasicInputCell{indexedCell{len(reactor.store), &reactor}}
+	reactor.store[cell.id] = cellStore{cell, value, []func(){}}
+
+	return cell
+}
+
+// CreateCompute1 creates a new ComputeCell. callback is executed when the value of cell changes.
+func (reactor BasicReactor) CreateCompute1(cell Cell, callback func(int) int) ComputeCell {
+	idxCell := getIndexedCell(cell)
+	computeCell := BasicComputeCell{indexedCell{len(reactor.store), &reactor}}
+	reactor.store[computeCell.id] = cellStore{computeCell, 0, []func(){}}
+	boundCallback := func() {
+		store := reactor.store[computeCell.id]
+		newValue := callback(reactor.store[idxCell.id].value)
+		if newValue != store.value {
+			store.value = newValue
+			reactor.store[computeCell.id] = store
+			for _, c := range store.callBacks {
+				c()
+			}
+		}
+	}
+	boundCallback()
+	store := reactor.store[idxCell.id]
+	store.callBacks = append(store.callBacks, boundCallback)
+	reactor.store[idxCell.id] = store
+
+	return computeCell
+}
+
+func getIndexedCell(cell Cell) indexedCell {
+	var idxCell indexedCell
+	switch c := cell.(type) {
+	case BasicInputCell:
+		idxCell = c.indexedCell
+	case BasicComputeCell:
+		idxCell = c.indexedCell
+	default:
+		panic(errors.New("Cannot create compute cell for unknown cell"))
+	}
+
+	return idxCell
+}
+
+// CreateCompute2 creates a new ComputeCell. callback is executed when the value of cell1 or cell2 changes.
+func (reactor BasicReactor) CreateCompute2(cell1, cell2 Cell, callback func(int, int) int) ComputeCell {
+	idxCell1 := getIndexedCell(cell1)
+	idxCell2 := getIndexedCell(cell2)
+	computeCell := BasicComputeCell{indexedCell{len(reactor.store), &reactor}}
+	reactor.store[computeCell.id] = cellStore{computeCell, 0, []func(){}}
+	boundCallback := func() {
+		store := reactor.store[computeCell.id]
+		newValue := callback(reactor.store[idxCell1.id].value, reactor.store[idxCell2.id].value)
+		if newValue != store.value {
+			store.value = newValue
+			reactor.store[computeCell.id] = store
+			for _, c := range store.callBacks {
+				c()
+			}
+		}
+	}
+	boundCallback()
+	store1 := reactor.store[idxCell1.id]
+	store1.callBacks = append(store1.callBacks, boundCallback)
+	reactor.store[idxCell1.id] = store1
+	store2 := reactor.store[idxCell2.id]
+	store2.callBacks = append(store2.callBacks, boundCallback)
+	reactor.store[idxCell2.id] = store2
+
+	return computeCell
+}
+
+// New initializes a new Reactor.
+func New() Reactor {
+	return BasicReactor{store: make(map[int]cellStore)}
+}
+
+type indexedCell struct {
+	id      int
+	reactor *BasicReactor
+}
+
+func (cell indexedCell) Value() int {
+	return cell.reactor.store[cell.id].value
+}
+
+// BasicInputCell is a basic implementation of the InputCell interface.
+type BasicInputCell struct {
+	indexedCell
+}
+
+// SetValue sets the value of the BasicInputCell.
+func (cell BasicInputCell) SetValue(value int) {
+	store := cell.reactor.store[cell.id]
+	store.value = value
+	cell.reactor.store[cell.id] = store
+	for _, callback := range cell.reactor.store[cell.id].callBacks {
+		callback()
+	}
+}
+
+// BasicComputeCell is a basic implementation of the ComputeCell interface.
+type BasicComputeCell struct {
+	indexedCell
+}
+
+// AddCallback adds a callback which will be called when the value changes.
+// It returns a callback handle which can be used to remove the callback.
+func (cell BasicComputeCell) AddCallback(callback func(int)) CallbackHandle {
+	store := cell.reactor.store[cell.id]
+	boundCallback := func() {
+		callback(cell.reactor.store[cell.id].value)
+	}
+	callbackHandle := basicCallbackHandle(len(store.callBacks))
+	store.callBacks = append(store.callBacks, boundCallback)
+	cell.reactor.store[cell.id] = store
+
+	return callbackHandle
+}
+
+// RemoveCallback removes a previously added callback, if it exists.
+func (cell BasicComputeCell) RemoveCallback(callbackHandle CallbackHandle) {
+	handle, ok := callbackHandle.(basicCallbackHandle)
+	if ok {
+		store := cell.reactor.store[cell.id]
+		store.callBacks[handle] = func() {}
+		cell.reactor.store[cell.id] = store
+	}
+}
+
+type basicCallbackHandle int
