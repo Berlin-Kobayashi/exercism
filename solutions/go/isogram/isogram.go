@@ -1,9 +1,10 @@
 // Package isogram implements a function for checking if a string is an isogram.
+// An isogram (also known as a "nonpattern word") is a word or phrase without a repeating letter.
 package isogram
 
 import (
-	"regexp"
 	"strings"
+	"unicode"
 )
 
 const testVersion = 1
@@ -13,9 +14,8 @@ func IsIsogram(input string) bool {
 	input = strings.ToLower(input)
 
 	letters := make(map[rune](bool))
-	letterRegex := regexp.MustCompile("^\\p{L}$")
 	for _, letter := range input {
-		if letterRegex.Match([]byte(string(letter))) {
+		if unicode.IsLetter(letter) {
 			if letters[letter] {
 				return false
 			}
