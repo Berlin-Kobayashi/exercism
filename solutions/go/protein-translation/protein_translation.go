@@ -27,12 +27,13 @@ var codons = map[string](string){
 func FromRNA(rna string) []string {
 	proteins := []string{}
 	for i := 0; i < len(rna); i += 3 {
-		protein := codons[rna[i:i+3]]
-		if protein == "STOP" {
-			break
-		}
+		if protein, ok := codons[rna[i:i+3]]; ok {
+			if protein == "STOP" {
+				break
+			}
 
-		proteins = append(proteins, protein)
+			proteins = append(proteins, protein)
+		}
 	}
 
 	return proteins

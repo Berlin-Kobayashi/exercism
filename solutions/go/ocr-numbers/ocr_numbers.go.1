@@ -1,0 +1,79 @@
+// Package ocr implements a function which can, given a 3 x 4 grid of pipes, underscores, and spaces,
+// determine which numbers are represented, or whether they are garbled.
+package ocr
+
+import (
+	"errors"
+	"fmt"
+	"strings"
+)
+
+// Recognize returns the numbers in the given 3 x 4 grids of pipes, underscores, and spaces.
+// Non recognized digits are returned as '?'.
+func Recognize(input string) (numbers []string) {
+	partitionedInput, err := partitionInput(input)
+	if err != nil {
+		fmt.Println(err)
+		return []string{"?"}
+	}
+	result := ""
+	for _, number := range partitionedInput {
+		result += recognizeDigit(number)
+	}
+
+	return []string{result}
+}
+
+func partitionInput(input string) (numbers []string, err error) {
+	rows := strings.Split(input, "\n")
+
+	numbers = make([]string, len(rows[1])/3)
+	for i, row := range rows {
+		if len(row)%3 != 0 {
+			return []string{}, errors.New("Cannot partition input. Non 3 characters wide digit detected")
+		}
+
+		if i == 0 {
+			for i := range numbers {
+				numbers[i] = "\n"
+			}
+		} else {
+			for j, char := range row {
+				numbers[j/3] += string(char)
+				if (j+1)%3 == 0 && i != len(rows)-1 {
+					numbers[j/3] += "\n"
+				}
+			}
+		}
+	}
+
+	return numbers, nil
+}
+
+func recognizeDigit(input string) string {
+	rows := strings.Split(input, "\n")
+	switch {
+	case rows[1] == " _ " && rows[2] == "| |" && rows[3] == "|_|":
+		return "0"
+	case rows[1] == "   " && rows[2] == "  |" && rows[3] == "  |":
+		return "1"
+	case rows[1] == " _ " && rows[2] == " _|" && rows[3] == "|_ ":
+		return "2"
+	case rows[1] == " _ " && rows[2] == " _|" && rows[3] == " _|":
+		return "3"
+	case rows[1] == "   " && rows[2] == "|_|" && rows[3] == "  |":
+		return "4"
+	case rows[1] == " _ " && rows[2] == "|_ " && rows[3] == " _|":
+		return "5"
+	case rows[1] == " _ " && rows[2] == "|_ " && rows[3] == "|_|":
+		return "6"
+	case rows[1] == " _ " && rows[2] == "  |" && rows[3] == "  |":
+		return "7"
+	case rows[1] == " _ " && rows[2] == "|_|" && rows[3] == "|_|":
+		return "8"
+	case rows[1] == " _ " && rows[2] == "|_|" && rows[3] == " _|":
+		return "9"
+	default:
+		return "?"
+	}
+}
