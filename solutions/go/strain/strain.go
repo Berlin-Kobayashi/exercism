@@ -5,12 +5,7 @@ package strain
 type Ints []int
 
 // Keep returns a collection containing all elements for which the given callback returns true.
-func (ints Ints) Keep(callback func(int) bool) Ints {
-	if ints == nil {
-		return nil
-	}
-
-	result := Ints{}
+func (ints Ints) Keep(callback func(int) bool) (result Ints) {
 	for _, number := range ints {
 		if callback(number) {
 			result = append(result, number)
@@ -31,12 +26,7 @@ func (ints Ints) Discard(callback func(int) bool) Ints {
 type Lists [][]int
 
 // Keep returns a collection containing all elements for which the given callback returns true.
-func (lists Lists) Keep(callback func([]int) bool) Lists {
-	if lists == nil {
-		return nil
-	}
-
-	result := Lists{}
+func (lists Lists) Keep(callback func([]int) bool) (result Lists) {
 	for _, list := range lists {
 		if callback(list) {
 			result = append(result, list)
@@ -50,12 +40,7 @@ func (lists Lists) Keep(callback func([]int) bool) Lists {
 type Strings []string
 
 // Keep returns a collection containing all elements for which the given callback returns true.
-func (strings Strings) Keep(callback func(string) bool) Strings {
-	if strings == nil {
-		return nil
-	}
-
-	result := Strings{}
+func (strings Strings) Keep(callback func(string) bool) (result Strings) {
 	for _, s := range strings {
 		if callback(s) {
 			result = append(result, s)
