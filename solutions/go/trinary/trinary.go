@@ -15,7 +15,7 @@ func ParseTrinary(input string) (result int64, err error) {
 
 		digitValue := digit - '0'
 		result = result*3 + int64(digitValue)
-		
+
 		if result < 0 {
 			return 0, fmt.Errorf("Cannot parse trinary. Input overflows int64")
 		}
