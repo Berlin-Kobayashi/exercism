@@ -2,10 +2,10 @@
 package kindergarten
 
 import (
-	"strings"
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 )
 
 const testVersion = 1
@@ -33,7 +33,7 @@ func NewGarden(diagram string, children []string) (*Garden, error) {
 		plants := make([]string, 4)
 		plantCounter := 0
 		for rowCounter := 0; rowCounter < len(diagramRows); rowCounter++ {
-			for _, plantID := range diagramRows[rowCounter][columnCounter:columnCounter+2] {
+			for _, plantID := range diagramRows[rowCounter][columnCounter : columnCounter+2] {
 				plants[plantCounter], err = getPlantByID(plantID)
 				if err != nil {
 					return nil, err
